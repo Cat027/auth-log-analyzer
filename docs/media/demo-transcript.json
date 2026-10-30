@@ -1,0 +1,30 @@
+[
+  {
+    "title": "01 / Default rule: 5 failures in 60 seconds",
+    "command": "python3 logwatch.py data/sample_logins.csv --output reports/default",
+    "output": "Valid events: 12 | Rejected rows: 0\nFlagged IPs: 1\n  203.0.113.10: 5 failures in the peak window\nReports saved to: reports/default\n",
+    "exit_code": 0,
+    "seconds": 6
+  },
+  {
+    "title": "02 / Higher threshold: no IP reaches 6 failures",
+    "command": "python3 logwatch.py data/sample_logins.csv --output reports/strict --threshold 6",
+    "output": "Valid events: 12 | Rejected rows: 0\nFlagged IPs: 0\nReports saved to: reports/strict\n",
+    "exit_code": 0,
+    "seconds": 6
+  },
+  {
+    "title": "03 / Wider window: two IPs reach the rule",
+    "command": "python3 logwatch.py data/sample_logins.csv --output reports/wide --threshold 3 --window-seconds 300",
+    "output": "Valid events: 12 | Rejected rows: 0\nFlagged IPs: 2\n  203.0.113.10: 5 failures in the peak window\n  198.51.100.30: 3 failures in the peak window\nReports saved to: reports/wide\n",
+    "exit_code": 0,
+    "seconds": 8
+  },
+  {
+    "title": "04 / Automated tests",
+    "command": "python3 -m unittest discover -s tests -q",
+    "output": "----------------------------------------------------------------------\nRan 14 tests in 0.042s\n\nOK\n",
+    "exit_code": 0,
+    "seconds": 6
+  }
+]
