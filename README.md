@@ -1,69 +1,112 @@
-# Auth Log Analyzer 🔐
+# 🔐 Auth Log Analyzer
 
-A defensive cybersecurity learning project that analyzes login logs and flags repeated authentication failures by IP address. Built with **Python and SQLite**, with configurable detection rules and exportable reports.
+A Python and SQLite tool that analyzes login logs and flags repeated authentication failures by IP address. This is a defensive cybersecurity study project, developed with AI assistance to explore programming, databases, and log analysis. It runs locally in the terminal and uses fictional sample data.
 
-**No external runtime dependencies · Offline analysis · Fictional sample data**
+## 📦 Technologies
 
-[Run the project](#run-the-project) · [Demo](#demo) · [Features](#features) · [Português](docs/GUIA_PT_BR.md)
+- `Python 3.12+`
+- `SQLite` — storing events, alerts, and analysis settings
+- `argparse` — command-line options
+- `csv`, `json`, `datetime`, and `ipaddress` — reading, validating, and exporting data
+- `collections.deque` — maintaining the detection window
+- `unittest` — automated tests
+- `Git` and `GitHub` — version control and documentation
 
-## Demo
+The analyzer uses only the Python standard library. No external packages are required to run it.
 
-![Terminal demonstration of three detection configurations and the automated tests](docs/media/demo.gif)
+## 🦄 Features
 
-**[Watch or download the 26-second video (MP4)](docs/media/demo.mp4)** · [Execution transcript](docs/media/demo-transcript.json)
+Here's what you can do with Auth Log Analyzer:
 
-The demonstration replays output captured from real executions, with adjusted pacing for readability. It is a rendered terminal replay, not a desktop screen recording. It shows:
+- **Analyze Login Records:** Load a normalized CSV file containing login timestamps, IP addresses, usernames, and outcomes.
+- **Detect Repeated Failures:** Flag IPs with at least five failed logins within 60 seconds using the default rule.
+- **Customize the Rule:** Change the failure threshold and time window to compare different detection scenarios.
+- **Validate the Input:** Check IPv4/IPv6 addresses, timezone-aware timestamps, usernames, and login outcomes. Invalid rows are recorded with an explanation.
+- **Export the Results:** Read a Markdown summary, inspect the JSON report, or query the SQLite database.
+- **Keep Previous Analyses:** Save each run in a new directory so existing reports are preserved.
+- **Experiment with Sample Data:** Run a fictional dataset and explore how changing the rule changes the results.
 
-| Configuration | Result with the included sample |
+An alert identifies a pattern to investigate; it does not confirm an attack.
+
+### 🎯 Keyboard Shortcuts
+
+The project is a command-line tool. These are **standard Linux/Bash terminal shortcuts**, rather than shortcuts implemented by the application:
+
+| Shortcut | Action |
 | --- | --- |
-| Default: 5 failures in 60 seconds | 1 flagged IP |
-| Higher threshold: 6 failures in 60 seconds | 0 flagged IPs |
-| Wider window: 3 failures in 300 seconds | 2 flagged IPs |
-| Automated tests | 14 tests passing |
+| `Enter` | Execute a command |
+| `↑` / `↓` | Browse command history |
+| `Tab` | Complete commands or file paths when supported by the shell |
+| `Ctrl + C` | Interrupt the running command |
+| `Ctrl + L` | Clear the terminal display |
 
-## Technologies used
+Use `python3 logwatch.py --help` to see the application's command-line options.
 
-| Technology | Purpose |
-| --- | --- |
-| Python 3.12+ | CLI application and detection logic |
-| SQLite / `sqlite3` | Store events, alerts, rejected rows, and analysis parameters |
-| `csv` and `json` | Read normalized logs and export structured reports |
-| `datetime` and `ipaddress` | Validate timestamps and IPv4/IPv6 addresses; normalize timezones |
-| `argparse` | Configure the command-line interface |
-| `collections.deque` | Maintain the rolling detection window |
-| `unittest` | Automated tests |
-| Git and GitHub | Version control and project documentation |
+## 👩‍🍳 The Process
 
-The analyzer uses only the Python standard library. **Pillow and FFmpeg are optional demo-generation tools**, not requirements for analyzing logs.
+The project started with a small question: how can repeated login failures be identified in a set of authentication records? A fictional CSV dataset made it possible to reproduce both concentrated failures and ordinary activity.
 
-## Features
+The first step was input validation. Each row is checked before analysis, and timestamps are converted to UTC. Invalid rows are kept separate so they do not silently affect the detection results.
 
-- Detect repeated failed logins from the same IP inside a configurable time window.
-- Support IPv4, IPv6, timezone-aware timestamps, and unsorted events.
-- Reject invalid rows with a line number and explanation.
-- Generate Markdown, JSON, and SQLite outputs.
-- Preserve earlier results by using a new output directory for each analysis.
-- Store user-supplied values with parameterized SQL statements.
-- Provide fictional data and tests for reproducible experimentation.
+Next came the detection logic. Failed logins are grouped by IP and sorted by time. A rolling window keeps track of failures inside the configured interval. Each IP that reaches the threshold receives one alert describing its largest failure window.
 
-## What users can do
+The results are then saved in SQLite and exported as Markdown and JSON reports. The code separates reading, detection, reporting, and storage into functions in `logwatch.py`.
 
-1. Run the included sample to see how the detection rule behaves.
-2. Analyze their own login records after converting them to the documented CSV format.
-3. Adjust the threshold and time window to compare results and possible false positives.
-4. Read a report or query the resulting SQLite database.
-5. Modify the implementation and run the tests to check its behavior.
+Finally, automated tests were added for boundary conditions, invalid inputs, and complete output generation. The demonstration below was generated from real command executions. I am studying this implementation and using the [Portuguese guide](docs/GUIA_PT_BR.md) to work through it and make my own changes.
 
-An alert is a pattern for investigation, **not proof of an attack**.
+## 📚 What I'm Learning
 
-## Run the project
+### 🐍 Working with Python
 
-Requires **Python 3.12+**. No `pip install` is needed to run the analyzer.
+- Reading structured files and validating their contents.
+- Separating responsibilities into functions and small data classes.
+- Using command-line arguments to make a tool configurable.
+
+### ⏱️ Detection Logic
+
+- Comparing timestamps and understanding an inclusive time window.
+- Using a `deque` to maintain a rolling window of events.
+- Distinguishing an alert from a confirmed security incident.
+
+### 🗃️ Databases and Reports
+
+- Organizing events and alerts in SQLite tables.
+- Using parameterized SQL queries to keep input values separate from SQL instructions.
+- Exporting the same analysis in human-readable and machine-readable formats.
+
+### 🧪 Testing and Documentation
+
+- Checking thresholds, time boundaries, and malformed input.
+- Comparing results after changing one parameter.
+- Documenting commands and expected outputs so another person can reproduce them.
+
+Running the sample with different settings already showed me why the time interval matters: six failures in 60 seconds flags no IPs in the sample, while three failures in 300 seconds flags two. The remaining topics are part of my ongoing study.
+
+## 💭 How Can It Be Improved?
+
+- Add a parser for a real authentication log format, such as SSH logs.
+- Add account-based detection alongside IP-based detection.
+- Compare possible false positives across more realistic fictional scenarios.
+- Introduce optional duplicate handling using a documented event identifier.
+- Process large files incrementally instead of loading every event into memory.
+- Run the tests automatically through GitHub Actions.
+
+Currently, the tool analyzes a file offline. Shared IPs can cause false positives, distributed attempts may fall below the per-IP threshold, and successful logins do not reset the failure count.
+
+## 🚦 Running the Project
+
+You need **Python 3.12 or newer**.
+
+**1. Clone the repository and enter its directory:**
 
 ```bash
 git clone https://github.com/Cat027/auth-log-analyzer.git
 cd auth-log-analyzer
-python3 --version
+```
+
+**2. Run the sample analysis:**
+
+```bash
 python3 logwatch.py data/sample_logins.csv --output reports/demo
 ```
 
@@ -76,161 +119,28 @@ Flagged IPs: 1
 Reports saved to: reports/demo
 ```
 
-Open `reports/demo/report.md` to read the result, or see the committed [sample report](docs/sample_report.md).
+**3. Open `reports/demo/report.md` to read the result.** The same directory contains `report.json` and `analysis.db`. You can also view the committed [sample report](docs/sample_report.md).
 
-For another run, omit `--output` to create a unique directory automatically:
+The output directory must not already exist. For another run, omit `--output` and the program will create a unique directory automatically:
 
 ```bash
 python3 logwatch.py data/sample_logins.csv
 ```
 
-Compare two other configurations:
+**4. Try different rules and run the tests:**
 
 ```bash
 python3 logwatch.py data/sample_logins.csv --threshold 6
 python3 logwatch.py data/sample_logins.csv --threshold 3 --window-seconds 300
-```
-
-Show the available options:
-
-```bash
-python3 logwatch.py --help
-```
-
-### Command-line options
-
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `input` | Required | Path to a normalized CSV log file |
-| `--threshold` | `5` | Minimum failures from one IP needed to generate an alert |
-| `--window-seconds` | `60` | Length of the rolling window in seconds |
-| `--output` | Unique directory under `reports/` | New output directory; must not already exist |
-| `-h`, `--help` | — | Display command-line help |
-
-### Keyboard shortcuts
-
-This is a command-line tool with **no application-specific keyboard shortcuts**. These standard shortcuts are useful in an interactive Linux/Bash terminal:
-
-| Shortcut | Action |
-| --- | --- |
-| `Enter` | Execute the command |
-| `↑` / `↓` | Browse command history |
-| `Tab` | Complete commands or file paths when the shell supports completion |
-| `Ctrl + C` | Interrupt the running command |
-| `Ctrl + L` | Clear the terminal display |
-
-## Input format
-
-The input is a **normalized CSV**, not a raw SSH, Windows, or web-server log. Convert other log formats to these four columns first:
-
-```csv
-timestamp,ip,username,status
-2026-10-01T10:00:00Z,203.0.113.10,admin,failure
-2026-10-01T10:00:10Z,192.0.2.20,analyst,success
-```
-
-Timestamps need a timezone, such as `Z` or `+00:00`. Status must be `success` or `failure` (case-insensitive). Each row counts as a separate event, including identical rows.
-
-## How the process works
-
-1. **Read:** open the CSV and validate its column names.
-2. **Validate:** check each timestamp, IP, username, and status; record rejected rows separately.
-3. **Normalize:** convert timestamps to UTC and standardize IP formatting.
-4. **Detect:** group failures by IP, sort their timestamps, and find the largest rolling window for each IP.
-5. **Report:** export summaries, alerts, and rejection details.
-6. **Store:** keep the validated events and analysis results in SQLite for later queries.
-
-The time-window boundary is inclusive: events at seconds 0 and 60 can belong to the same 60-second window. A successful login does not reset the failure count.
-
-### Output files
-
-| File | Contents |
-| --- | --- |
-| `report.md` | Readable summary and flagged IPs |
-| `report.json` | Rule settings, counts, alerts, and rejected rows |
-| `analysis.db` | SQLite tables: `events`, `alerts`, `rejected_rows`, and `analysis` |
-
-Example database query after the demo run:
-
-```python
-import sqlite3
-
-with sqlite3.connect("reports/demo/analysis.db") as db:
-    rows = db.execute("""
-        SELECT ip, COUNT(*) AS failures
-        FROM events
-        WHERE status = ?
-        GROUP BY ip
-        ORDER BY failures DESC
-    """, ("failure",)).fetchall()
-    print(rows)
-```
-
-This query counts failures across the whole file; the detection rule uses the rolling window instead.
-
-## How it was built
-
-This project was developed with **AI assistance as a guided learning project**. I am studying the implementation and will document my own changes as the project evolves.
-
-The implementation started with a small, reproducible problem: detecting repeated login failures in a fictional dataset. The code separates input validation, detection, reporting, and database storage into functions in `logwatch.py`. Standard-library tools keep setup simple. Tests check the rule boundaries and complete output generation; the terminal demo captures real execution results.
-
-| File | Responsibility |
-| --- | --- |
-| `logwatch.py` | CLI, CSV validation, detection, reports, and SQLite storage |
-| `data/sample_logins.csv` | Fictional dataset used in examples |
-| `tests/test_logwatch.py` | Detection, input, CLI, and output tests |
-| `docs/GUIA_PT_BR.md` | Guided explanation and exercises in Portuguese |
-| `docs/media/` | Demo video, animated preview, and execution transcript |
-| `tools/record_demo.py` | Optional script for regenerating the demonstration |
-
-## What I'm learning
-
-These are the topics I am studying through the project, rather than claims of completed expertise:
-
-- Reading and validating structured data with Python.
-- Comparing timezone-aware timestamps and using a sliding window.
-- Designing SQLite tables and using parameterized queries.
-- Testing boundaries, malformed input, and complete application behavior.
-- Understanding detection thresholds, false positives, and the limits of IP-based rules.
-- Using Git and writing documentation that others can reproduce.
-
-The [Portuguese study guide](docs/GUIA_PT_BR.md) includes exercises to work through before presenting the implementation in an interview.
-
-## Tests
-
-```bash
 python3 -m unittest discover -s tests -v
 ```
 
-The current suite contains **14 tests**, covering time-window boundaries, separate IPs, unsorted events, duplicate rows, IPv6, timezone normalization, rejected input, SQL-like usernames, existing report protection, and end-to-end output consistency.
+The current suite contains **14 tests**. The input format, database queries, output details, and demo-generation instructions are in the [technical reference](docs/TECHNICAL_REFERENCE.md).
 
-## Limitations and improvements
+## 🍿 Video
 
-### Current limitations
+![Auth Log Analyzer terminal demonstration](docs/media/demo.gif)
 
-- One alert per IP summarizes its largest failure window; it does not list every interval.
-- Shared IPs can produce false positives, while distributed attempts may stay below the threshold.
-- All events are loaded into memory, so this version is intended for small learning datasets.
-- There is no raw-log parser, deduplication, live monitoring, IP blocking, or incident-response integration.
+**[Watch or download the 26-second video (MP4)](docs/media/demo.mp4)** · [Execution transcript](docs/media/demo-transcript.json)
 
-### Possible improvements
-
-- [ ] Add a parser for one real authentication log format.
-- [ ] Add account-based detection alongside IP-based detection.
-- [ ] Compare false positives across more realistic fictional scenarios.
-- [ ] Add optional duplicate handling with a documented event identifier.
-- [ ] Process large files incrementally.
-- [ ] Add automated test execution through GitHub Actions.
-
-## Recreate the demo (optional)
-
-On Linux with DejaVu Sans Mono fonts and FFmpeg installed, install Pillow in a separate environment and run:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install Pillow
-python tools/record_demo.py
-```
-
-This regenerates the MP4, GIF, and transcript from fresh executions. Output pacing is adjusted for readability; the demo does not add features to the analyzer.
+The animation and video replay output captured from real executions, with adjusted pacing for readability. They show the default rule, two alternative configurations, and the automated tests.
