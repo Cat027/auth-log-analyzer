@@ -23,7 +23,7 @@ Here's what you can do with Auth Log Analyzer:
 - **Customize the Rule:** Change the failure threshold and time window to compare different detection scenarios.
 - **Validate the Input:** Check IPv4/IPv6 addresses, timezone-aware timestamps, usernames, and login outcomes. Invalid rows are recorded with an explanation.
 - **Export the Results:** Read a Markdown summary, inspect the JSON report, or query the SQLite database.
-- **Keep Previous Analyses:** Save each run in a new directory so existing reports are preserved.
+- **Keep Previous Analyses:** Save each run in a new directory so existing reports are preserved. If writing a run fails, clean up that run's partial output so it can be retried.
 - **Experiment with Sample Data:** Run a fictional dataset and explore how changing the rule changes the results.
 
 An alert identifies a pattern to investigate; it does not confirm an attack.
@@ -52,7 +52,7 @@ Next came the detection logic. Failed logins are grouped by IP and sorted by tim
 
 The results are then saved in SQLite and exported as Markdown and JSON reports. The code separates reading, detection, reporting, and storage into functions in `logwatch.py`.
 
-Finally, automated tests were added for boundary conditions, invalid inputs, and complete output generation. The demonstration below was generated from real command executions. I am studying this implementation and using the [Portuguese guide](docs/GUIA_PT_BR.md) to work through it and make my own changes.
+Finally, automated tests were added for boundary conditions, invalid inputs, complete output generation, and cleanup after write failures. The demonstration below was generated from real command executions. I am studying this implementation and documenting my own changes as the project evolves.
 
 ## 📚 What I'm Learning
 
@@ -135,7 +135,7 @@ python3 logwatch.py data/sample_logins.csv --threshold 3 --window-seconds 300
 python3 -m unittest discover -s tests -v
 ```
 
-The current suite contains **14 tests**. The input format, database queries, output details, and demo-generation instructions are in the [technical reference](docs/TECHNICAL_REFERENCE.md).
+The current suite contains **22 tests**. The input format, database queries, output details, and demo-generation instructions are in the [technical reference](docs/TECHNICAL_REFERENCE.md).
 
 ## 🍿 Video
 

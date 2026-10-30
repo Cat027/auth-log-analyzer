@@ -4,6 +4,7 @@ import argparse
 import csv
 import ipaddress
 import json
+import shutil
 import sqlite3
 import sys
 from collections import defaultdict, deque
@@ -43,7 +44,7 @@ def read_events(path):
                 if None in row or any(value is None for value in row.values()):
                     raise ValueError("Incorrect number of columns.")
                 stamp = row["timestamp"].strip()
-                timestamp = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+                timestamp = datetime.fromisoformat(stamp)
                 if timestamp.tzinfo is None:
                     raise ValueError("Timestamp needs a timezone, such as Z or +00:00.")
                 timestamp = timestamp.astimezone(timezone.utc)
@@ -150,15 +151,27 @@ def save_database(path, events, report):
 def write_results(output, events, report):
     """Use a new directory for every run so earlier reports are preserved."""
     output = Path(output)
-    output.mkdir(parents=True, exist_ok=False)
-    save_database(output / "analysis.db", events, report)
-    (output / "report.json").write_text(
-        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    try:
+        output.mkdir(parents=True)
+    except FileExistsError:
+        raise ValueError(f"Output directory already exists: {output}") from None
+    try:
+        save_database(output / "analysis.db", events, report)
+        (output / "report.json").write_text(
+            json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        (output / "report.md").write_text(render_markdown(report), encoding="utf-8")
+    except BaseException:
+        shutil.rmtree(output, ignore_errors=True)  # clean up only the directory created by this run
+        raise
+
+
+def render_markdown(report):
     summary = report["summary"]
+    source = " ".join(report["source"].split())
     lines = [
         "# Authentication log analysis", "",
-        f"Source: {report['source'].replace(chr(10), ' ').replace(chr(13), ' ')}", "",
+        f"Source: {source}", "",
         f"Rule: at least {report['rule']['threshold']} failures from the same IP "
         f"within {report['rule']['window_seconds']} seconds (inclusive).", "",
         f"Valid events: {summary['valid_events']} | Rejected rows: {summary['rejected_rows']}",
@@ -175,7 +188,7 @@ def write_results(output, events, report):
     if not report["alerts"]:
         lines.extend(["", "No IP met the configured rule."])
     lines.extend(["", "Alerts identify patterns for review, not confirmed attacks.", ""])
-    (output / "report.md").write_text("\n".join(lines), encoding="utf-8")
+    return "\n".join(lines)
 
 
 def positive_integer(value):
@@ -200,7 +213,7 @@ def main(argv=None):
         report = build_report(events, rejected, alerts, args.input, args.threshold, args.window_seconds)
         output = args.output or Path("reports") / datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%S%fZ")
         write_results(output, events, report)
-    except (OSError, ValueError, UnicodeError, csv.Error, sqlite3.Error) as exc:
+    except (OSError, ValueError, csv.Error, sqlite3.Error) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
     print(f"Valid events: {len(events)} | Rejected rows: {len(rejected)}")

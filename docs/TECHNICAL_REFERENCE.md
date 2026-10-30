@@ -26,6 +26,10 @@ Timestamps need a timezone, such as `Z` or `+00:00`. Status must be `success` or
 | `-h`, `--help` | — | Display command-line help |
 
 
+## Failed writes and retries
+
+An existing output path is rejected without overwriting it. Once a new run directory has been created, a failure during database or report writing triggers cleanup of that new directory. After correcting the underlying issue, retry with the same `--output` path. Existing output directories are never part of this cleanup.
+
 ## Output files
 
 | File | Contents |

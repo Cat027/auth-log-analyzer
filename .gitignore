@@ -5,3 +5,8 @@ reports/
 *.db
 *.db-journal
 .DS_Store
+
+venv/
+NOTAS_PESSOAIS.md
+/docs/GUIA_PT_BR.md
+/estudo-pessoal/
